@@ -1,0 +1,14 @@
+{
+  "name": "expense-tracker",
+  "version": "1.0.0",
+  "description": "Expense tracker web app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^4.22.3"
+  }
+}

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">💳</div>
+        <div>
+          <h1>Expense Tracker</h1>
+          <p class="subtitle">Keep track of your spending and plan your budget</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Error / Notification banner -->
+      <div id="errorBanner" class="alert alert-error" role="alert" style="display: none;"></div>
+
+      <!-- Add / Edit Transaction Form Card -->
+      <section class="card form-card">
+        <h2 class="card-title" id="formTitle">Add New Transaction</h2>
+        <form id="expenseForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="type">Type <span class="required">*</span></label>
+              <select id="type" name="type" required>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="amount">Amount ($) <span class="required">*</span></label>
+              <input 
+                type="number" 
+                id="amount" 
+                name="amount" 
+                step="0.01" 
+                min="0.01" 
+                placeholder="0.00" 
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="category">Category <span class="required">*</span></label>
+              <input 
+                type="text" 
+                id="category" 
+                name="category" 
+                placeholder="e.g. Groceries, Salary, Rent" 
+                maxlength="50" 
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="date">Date <span class="required">*</span></label>
+              <input 
+                type="date" 
+                id="date" 
+                name="date" 
+                required
+              >
+            </div>
+
+            <div class="form-group full-width">
+              <label for="note">Note <span class="optional">(optional)</span></label>
+              <input 
+                type="text" 
+                id="note" 
+                name="note" 
+                placeholder="Brief description or memo" 
+                maxlength="200"
+              >
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="cancelBtn" class="btn btn-secondary" style="display: none;">Cancel</button>
+            <button type="submit" id="submitBtn" class="btn btn-primary">
+              <span class="btn-text">Add Transaction</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Financial Summary Cards -->
+      <section class="summary-cards-grid">
+        <div class="summary-card card-income">
+          <div class="summary-header">
+            <span class="summary-icon">📈</span>
+            <span class="summary-label">Total Income</span>
+          </div>
+          <div class="summary-value income-value" id="totalIncomeDisplay">$0.00</div>
+        </div>
+
+        <div class="summary-card card-expenses">
+          <div class="summary-header">
+            <span class="summary-icon">📉</span>
+            <span class="summary-label">Total Expenses</span>
+          </div>
+          <div class="summary-value expense-value" id="totalExpensesDisplay">$0.00</div>
+        </div>
+
+        <div class="summary-card card-balance" id="balanceCard">
+          <div class="summary-header">
+            <span class="summary-icon">⚖️</span>
+            <span class="summary-label">Net Balance</span>
+          </div>
+          <div class="summary-value" id="balanceDisplay">$0.00</div>
+        </div>
+      </section>
+
+      <!-- Essential vs Optional Spending Split Cards -->
+      <section class="split-cards-grid">
+        <div class="split-card card-essential">
+          <div class="split-header">
+            <span class="split-icon">🛡️</span>
+            <div>
+              <div class="split-title">Essential Spending</div>
+              <div class="split-sub" id="essentialPercent">0% of total spending</div>
+            </div>
+          </div>
+          <div class="split-value" id="essentialTotalDisplay">$0.00</div>
+        </div>
+
+        <div class="split-card card-optional">
+          <div class="split-header">
+            <span class="split-icon">🎯</span>
+            <div>
+              <div class="split-title">Optional Spending</div>
+              <div class="split-sub" id="optionalPercent">0% of total spending</div>
+            </div>
+          </div>
+          <div class="split-value" id="optionalTotalDisplay">$0.00</div>
+        </div>
+      </section>
+
+      <!-- Filter Bar Card -->
+      <section class="card filter-card">
+        <h3 class="filter-title">Filter Transactions</h3>
+        <form id="filterForm" class="filter-grid" novalidate>
+          <div class="filter-group">
+            <label for="filterFrom">From</label>
+            <input type="date" id="filterFrom" name="from">
+          </div>
+
+          <div class="filter-group">
+            <label for="filterTo">To</label>
+            <input type="date" id="filterTo" name="to">
+          </div>
+
+          <div class="filter-group">
+            <label for="filterCategory">Category</label>
+            <select id="filterCategory" name="category">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="filterType">Type</label>
+            <select id="filterType" name="type">
+              <option value="">All Types</option>
+              <option value="expense">Expenses</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+
+          <div class="filter-actions">
+            <button type="submit" id="applyFilterBtn" class="btn btn-primary btn-sm">Apply</button>
+            <button type="button" id="resetFilterBtn" class="btn btn-secondary btn-sm">Reset</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Categories Management Card -->
+      <section class="card categories-card">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Expense Categories</h2>
+            <p class="card-subtitle">Mark each category as Essential or Optional to categorize spending</p>
+          </div>
+        </div>
+
+        <div class="categories-list" id="categoriesList">
+          <!-- Rendered via JS -->
+        </div>
+
+        <div id="emptyCategories" class="empty-state" style="display: none; padding: 20px 10px;">
+          <p class="empty-desc">No expense categories yet.</p>
+        </div>
+      </section>
+
+      <!-- Monthly Budgets Card -->
+      <section class="card budgets-card">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Monthly Budgets</h2>
+            <p class="card-subtitle">Set monthly category limits and track your progress</p>
+          </div>
+          <!-- Cross-browser Month Navigation -->
+          <div class="month-selector">
+            <button type="button" id="prevMonthBtn" class="btn btn-secondary btn-icon" title="Previous Month">◀</button>
+            <span id="budgetMonthLabel" class="current-month-label">Loading...</span>
+            <button type="button" id="nextMonthBtn" class="btn btn-secondary btn-icon" title="Next Month">▶</button>
+          </div>
+        </div>
+
+        <!-- Budget Form -->
+        <form id="budgetForm" class="budget-setup-form" novalidate>
+          <div class="budget-form-grid">
+            <div class="form-group">
+              <label for="budgetCategory">Category <span class="required">*</span></label>
+              <select id="budgetCategory" name="category" required>
+                <!-- Populated via JS -->
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="budgetLimit">Monthly limit ($) <span class="sub-label">(applies to every month)</span> <span class="required">*</span></label>
+              <input 
+                type="number" 
+                id="budgetLimit" 
+                name="limit" 
+                step="0.01" 
+                min="0.01" 
+                placeholder="e.g. 300.00" 
+                required
+              >
+            </div>
+
+            <div class="form-group align-end">
+              <button type="submit" id="setBudgetBtn" class="btn btn-primary">Set Budget</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Budgets List -->
+        <div class="budgets-list" id="budgetsList">
+          <!-- Rendered via JS -->
+        </div>
+
+        <div id="emptyBudgets" class="empty-state" style="display: none; padding: 20px 10px;">
+          <p class="empty-desc">No budgets configured yet. Select a category and limit above to start budgeting.</p>
+        </div>
+      </section>
+
+      <!-- Spending Insights Card -->
+      <section class="card insights-card" id="insightsCard">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Spending Insights</h2>
+            <p class="card-subtitle">Visual breakdown and month-over-month trends</p>
+          </div>
+          <!-- Insights Month Navigator -->
+          <div class="month-selector-nav">
+            <button type="button" id="prevInsightsMonthBtn" class="btn btn-icon" title="Previous Month" aria-label="Previous Month">&larr;</button>
+            <span id="insightsMonthDisplay" class="month-display-label">--</span>
+            <button type="button" id="nextInsightsMonthBtn" class="btn btn-icon" title="Next Month" aria-label="Next Month">&rarr;</button>
+          </div>
+        </div>
+
+        <!-- Overall Month-over-Month Banner -->
+        <div class="insights-overall-banner" id="insightsOverallBanner">
+          <div class="overall-stat-col">
+            <span class="overall-label">Current Month</span>
+            <span class="overall-val" id="overallCurrentVal">$0.00</span>
+          </div>
+          <div class="overall-diff-col">
+            <span class="overall-badge" id="overallChangeBadge">--</span>
+            <span class="overall-diff-text" id="overallDiffText">compared to last month</span>
+          </div>
+          <div class="overall-stat-col text-right">
+            <span class="overall-label">Previous Month</span>
+            <span class="overall-val" id="overallPrevVal">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Where you could cut back (Top 3 Optional Categories) -->
+        <div class="cut-back-section">
+          <div class="section-subheading-row">
+            <h3 class="section-subheading">Where you could cut back</h3>
+            <span class="subheading-note">Top optional spending categories this month</span>
+          </div>
+          <div class="cut-back-cards" id="cutBackList">
+            <!-- Rendered via JS -->
+          </div>
+          <p class="cut-back-empty" id="cutBackEmpty" style="display: none;">No optional spending this month</p>
+        </div>
+
+        <!-- Chart and Ranked List Grid -->
+        <div class="insights-grid">
+          <!-- Chart Column -->
+          <div class="insights-col chart-col">
+            <h3 class="section-subheading">Category Distribution</h3>
+            <div class="chart-container">
+              <canvas id="insightsChart" width="260" height="260" role="img" aria-label="Category spending breakdown chart"></canvas>
+              <div id="chartFallbackMsg" class="chart-fallback" style="display: none;">
+                <p>Chart unavailable (offline or library blocked).</p>
+                <p class="sub-label">See category breakdown table below.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ranked List Column -->
+          <div class="insights-col ranked-col">
+            <h3 class="section-subheading">Where your money goes</h3>
+            <div class="ranked-list-container" id="rankedList">
+              <!-- Rendered via JS -->
+            </div>
+            <div id="emptyRankedList" class="empty-state" style="display: none; padding: 20px 10px;">
+              <p class="empty-desc">No spending recorded for this month.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Month over Month Breakdown -->
+        <div class="mom-section">
+          <h3 class="section-subheading">Month-over-Month Comparison</h3>
+          <div class="table-container">
+            <table class="data-table" id="momTable">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Kind</th>
+                  <th class="text-right">This Month</th>
+                  <th class="text-right">Last Month</th>
+                  <th class="text-right">Change ($)</th>
+                  <th class="text-right">Change (%)</th>
+                </tr>
+              </thead>
+              <tbody id="momTableBody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="emptyMomTable" class="empty-state" style="display: none; padding: 15px 10px;">
+            <p class="empty-desc">No comparison data available for this month or the previous month.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Transactions List Card -->
+      <section class="card table-card">
+        <div class="card-header-row">
+          <div>
+            <h2 class="card-title">Transactions</h2>
+            <p class="card-subtitle" id="transactionSummary">Loading transactions...</p>
+          </div>
+          <a href="/api/export.csv" class="btn btn-secondary btn-sm" id="exportCsvBtn" download>
+            Export all transactions (CSV)
+          </a>
+        </div>
+
+        <div class="table-container">
+          <table class="data-table" id="transactionsTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Note</th>
+                <th class="text-right">Amount</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="transactionsBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">📂</div>
+          <p class="empty-title">No transactions found</p>
+          <p class="empty-desc" id="emptyStateDesc">No transactions match the selected filters.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
